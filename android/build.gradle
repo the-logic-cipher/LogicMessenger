@@ -3,7 +3,7 @@
 buildscript {
     ext {
         buildToolsVersion = "31.0.0"
-        minSdkVersion = 21
+        minSdkVersion = 24
         compileSdkVersion = 31
         targetSdkVersion = 31
 
@@ -46,6 +46,8 @@ allprojects {
             }
         }
         google()
-        maven { url 'https://www.jitpack.io' }
+        maven { 
+        url 'https://www.jitpack.io' 
+        url "https://dl.cloudsmith.io/public/cometchat/cometchat-pro-android/maven/"}
     }
 }

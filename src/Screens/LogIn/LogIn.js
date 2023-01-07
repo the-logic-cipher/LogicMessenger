@@ -6,38 +6,96 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useContext, useEffect} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {auth} from '../../../assets/Config/Firebase';
 import {signInWithEmailAndPassword} from 'firebase/auth';
+import Context from '../../Context/Context.js';
+import validator from 'validator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {cometChatConfig} from '../../../env';
 
 LogIn = () => {
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
-
+  const {setUser, cometChat} = useContext(Context);
   const navigation = useNavigation();
 
-  const login = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        const user = userCredential.user;
-        console.log(user);
-        navigation.navigate('home');
-        alert('User signed in!');
-      })
-      .catch(error => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-        if (error.code === 'auth/invalid-email') {
-          alert('Your email is incorrect!');
-        }
-        if (error.code === 'auth/wrong-password') {
-          alert('Your password is incorrect!');
-        }
-      });
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      setIsLoading(false);
+    };
+  }, []);
+
+  const isUserCredentialsValid = (email, password) => {
+    return validator.isEmail(email) && password;
   };
+
+  const showMessage = (title, message) => {
+    Alert.alert(title, message);
+  };
+
+  const login = () => {
+    if (isUserCredentialsValid(email, password)) {
+      setIsLoading(true);
+      signInWithEmailAndPassword(auth, email, password)
+        .then(userCredential => {
+          const user = userCredential.user;
+          const firebaseUid = userCredential.user.uid;
+          console.log(user);
+
+          // comet chat login
+
+          cometChat
+            .login(firebaseUid, `${cometChatConfig.cometChatAuthKey}`)
+            .then(
+              user => {
+                AsyncStorage.setItem('auth', JSON.stringify(user));
+                setUser(user);
+                console.log(user);
+                navigation.navigate('home');
+                alert('User signed in!');
+              },
+              error => {
+                setIsLoading(false);
+                console.log(error);
+                showMessage(
+                  'Error',
+                  'Your username or password is not correct',
+                );
+              },
+            );
+        })
+        .catch(error => {
+          setIsLoading(false);
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.log(errorCode, errorMessage);
+          if (error.code === 'auth/invalid-email') {
+            alert('Your email is incorrect!');
+          }
+          if (error.code === 'auth/wrong-password') {
+            alert('Your password is incorrect!');
+          }
+        });
+    } else {
+      setIsLoading(false);
+      showMessage('Error', 'Your username or password is not correct');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={style.container}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={{flex: 1}}>
@@ -92,6 +150,12 @@ LogIn = () => {
 export default LogIn;
 
 const style = StyleSheet.create({
+  container: {
+    backgroundColor: '#fff',
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
   logo: {
     fontSize: 34,
     color: '#001E39',
