@@ -3,12 +3,17 @@ import {cometChatConfig} from './env.js';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Home from './src/Screens/Home/Home.js';
-import {TouchableOpacity, Image} from 'react-native';
+import {TouchableOpacity, Image, Alert} from 'react-native';
 import Context from './src/Context/Context.js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Platform, PermissionsAndroid, Modal} from 'react-native';
 import StackNavigation from './src/Components/Navigation/StackNavigation.js';
 import {logout} from './src/Context/LogOut.js';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import CreateGroup from './src/Screens/CreateGroup/CreateGroup.js';
+import ManageGroup from './src/Screens/ManageGroup/ManageGroup.js';
+import AddMembers from './src/Screens/AddMembers/AddMembers.js';
+import RemoveMembers from './src/Screens/RemoveMembers/RemoveMembers.js';
 
 function App() {
   const Stack = createNativeStackNavigator();
@@ -26,10 +31,6 @@ function App() {
       // cometChat.removeUserListener(userOnlineListenerId);
     };
   }, []);
-
-  const createGroup = navigation => () => {
-    navigation.navigate('Create Group');
-  };
 
   const initCometChat = async () => {
     const {CometChat} = await import('@cometchat-pro/react-native-chat');
@@ -74,6 +75,33 @@ function App() {
     }
   };
 
+  const handleLogout = navigation => {
+    cometChat.logout().then(
+      () => {
+        console.log('Logout completed successfully');
+        AsyncStorage.removeItem('auth');
+        setUser(null);
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'login'}],
+        });
+      },
+      error => {
+        console.log('Logout failed with exception:', {error});
+      },
+    );
+  };
+
+  const logout = navigation => () => {
+    Alert.alert('Confirm', 'Do you want to log out?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {text: 'OK', onPress: () => handleLogout(navigation)},
+    ]);
+  };
+
   if (user && !callSettings) {
     return (
       <Context.Provider
@@ -92,41 +120,32 @@ function App() {
               options={({navigation}) => ({
                 headerLeft: () => (
                   <TouchableOpacity onPress={logout(navigation)}>
-                    <Image
-                      style={{width: 24, height: 24, marginRight: 8}}
-                      source={{
-                        uri: 'https://findicons.com/files/icons/2711/free_icons_for_windows8_metro/512/exit.png',
-                      }}
+                    <Icon
+                      name="logout"
+                      style={{fontSize: 22, marginRight: 8}}
                     />
                   </TouchableOpacity>
                 ),
                 headerRight: () => (
-                  <TouchableOpacity onPress={createGroup(navigation)}>
-                    <Image
-                      style={{width: 24, height: 24}}
-                      source={{
-                        uri: 'https://cdn2.iconfinder.com/data/icons/ios-7-icons/50/plus-512.png',
-                      }}
-                    />
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('createGroup')}>
+                    <Icon name="add" style={{fontSize: 22, marginRight: 8}} />
                   </TouchableOpacity>
                 ),
               })}
             />
-            {/* <Stack.Screen name="Create Group" component={CreateGroup} />
-            <Stack.Screen
+            <Stack.Screen name="createGroup" component={CreateGroup} />
+            {/* <Stack.Screen
               name="Chat"
               component={Chat}
               options={({navigation}) => ({
                 headerTitle: () => renderChatHeaderTitle(),
                 headerRight: () => renderChatHeaderRight(navigation),
               })}
-            />
-            <Stack.Screen name="Manage Group" component={ManageGroup} />
-            <Stack.Screen name="Add Members" component={AddGroupMembers} />
-            <Stack.Screen
-              name="Remove Members"
-              component={RemoveGroupMembers}
             /> */}
+            <Stack.Screen name="manageGroup" component={ManageGroup} />
+            <Stack.Screen name="addMembers" component={AddMembers} />
+            <Stack.Screen name="removeMembers" component={RemoveMembers} />
           </Stack.Navigator>
         </NavigationContainer>
         {/* {isSomeoneCalling && call && (
