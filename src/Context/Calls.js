@@ -29,13 +29,13 @@ useEffect(() => {
   }
 }, [callType]);
 
-const startAudioCall = () => {
+export const startAudioCall = () => {
   if (cometChat && selectedConversation) {
     setCallType(cometChat.CALL_TYPE.AUDIO);
   }
 };
 
-const startVideoCall = () => {
+export const startVideoCall = () => {
   if (cometChat && selectedConversation) {
     setCallType(cometChat.CALL_TYPE.VIDEO);
   }

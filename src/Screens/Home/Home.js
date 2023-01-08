@@ -100,7 +100,7 @@ const Home = () => {
     }
     //
     setSelectedConversation({...item, contactType: selectedType});
-    navigation.navigate('manageGroup');
+    navigation.navigate('chat');
   };
 
   const getKey = item => {
